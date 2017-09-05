@@ -8,6 +8,8 @@ This function will scan all files in current folder and sub folders and build a 
 
 I did not spend too much time on testing of this script. So use it carefully and make backup before run.
 
+
+
    
 ### Installation
 ```
