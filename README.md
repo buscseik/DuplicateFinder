@@ -56,3 +56,12 @@ After scan, script will delete all duplication except first instance.
    Find-FileDuplicates -AfterBehaviour ReturnObject
 ```
 
+ * MoveDuplication
+   After scan, script will keep the first instance of duplication and move the rest of dupliacation
+   to a target folder. 
+   Script will reserve relateive path.
+   Target folder will be asked by script after start.
+```
+   Find-FileDuplicates -AfterBehaviour MoveDuplication
+```
+   

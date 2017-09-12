@@ -23,13 +23,19 @@ function FindDuplicates()
 {
 	
     #Generate a file list that gruped by size and removed where size is unique
+    Write-Host "$(Get-Date -Format "dd.MM.yyyy-HH:mm:ss [1/3]>") Building file list"
     $FullListOfDuplicationGroups=Get-ChildItem -File -Recurse | Sort-Object {$_.Length} | Group-Object -Property Length | where-Object {$_.Count -gt 1}
 
 
-    
+    Write-Host "$(Get-Date -Format "dd.MM.yyyy-HH:mm:ss [2/3]>") Generate hash for potential duplication candidatas"
     $ListOfUniqueHashObjects=@()
+    
+    $GroupCounter=0
     foreach($nextFileGroup in $FullListOfDuplicationGroups)
     {
+        
+        Write-Progress -Id 1 -Activity "Generate Hash for each duplication candidates" -status "Group completed $GroupCounter" -percentComplete ($GroupCounter / $FullListOfDuplicationGroups.Count*100)
+        $GroupCounter++
         #Generate an reference object for each file size, that contain all the 
         [UniqueSize]$NewSize=[UniqueSize]::new()
         $NewSize.FileSize=$nextFileGroup.Name
@@ -73,13 +79,16 @@ function FindDuplicates()
         }
         
     }
+    Write-Progress -Id 1 -Activity "Generate Hash for each duplication candidates" -status "Completed" -percentComplete 100
     return $ListOfUniqueHashObjects
 }
 function CleanUpManual()
 {
     param($ListOfDuplicatesGroups)
+    $GroupCounter=0
     foreach($nextDuplicateGroup in $ListOfDuplicatesGroups)
     {
+        
         $firstFile=$nextDuplicateGroup.ListOfFiles[0]
         $RestOfFiles=$nextDuplicateGroup.ListOfFiles | select -Skip 1
 
@@ -121,14 +130,14 @@ function CleanUpManual()
         {
             foreach($nextFileToDelete in $RestOfFiles)
             {
-                "This has ben deleted {0,-20} {1} {2}" -f $nextFileToDelete.Name,$($nextDuplicateGroup.hashOfFiles[0].Substring(0,20)+"..."), $nextFileToDelete.DirectoryName | Tee-Object -Append DeletedFilesLog.txt
+                "This has been deleted {0,-20} {1} {2}" -f $nextFileToDelete.Name,$($nextDuplicateGroup.hashOfFiles[0].Substring(0,20)+"..."), $nextFileToDelete.DirectoryName | Tee-Object -Append DeletedFilesLog.txt
                 $nextFileToDelete | Remove-Item
             }
         }
         else
         {
                 #Remove first Item
-                "This has ben deleted {0,-20} {1} {2}" -f $firstFile.Name,$($nextDuplicateGroup.hashOfFiles[0].Substring(0,20)+"..."), $firstFile.DirectoryName | Tee-Object -Append DeletedFilesLog.txt
+                "This has been deleted {0,-20} {1} {2}" -f $firstFile.Name,$($nextDuplicateGroup.hashOfFiles[0].Substring(0,20)+"..."), $firstFile.DirectoryName | Tee-Object -Append DeletedFilesLog.txt
                 $firstFile | Remove-Item
 
                 #Build a list without the file that will be kept
@@ -138,13 +147,18 @@ function CleanUpManual()
                 #Remove rest of the files
                 foreach($nextFileToDelete in $listToDelete)
                 {
-                    "This has ben deleted {0,-20} {1} {2}" -f $nextFileToDelete.Name,$($nextDuplicateGroup.hashOfFiles[0].Substring(0,20)+"..."), $nextFileToDelete.DirectoryName | Tee-Object -Append DeletedFilesLog.txt
+                    "This has been deleted {0,-20} {1} {2}" -f $nextFileToDelete.Name,$($nextDuplicateGroup.hashOfFiles[0].Substring(0,20)+"..."), $nextFileToDelete.DirectoryName | Tee-Object -Append DeletedFilesLog.txt
                     $nextFileToDelete | Remove-Item
                 }
                 
                 
         }
+
+        Write-Progress -Id 2 -Activity "Duplication groups been progressed" -status "Group completed $GroupCounter" -percentComplete ($GroupCounter / $ListOfDuplicatesGroups.Count*100)
+        $GroupCounter++
+
     }
+    Write-Progress -Id 2 -Activity "Duplication groups been progressed" -status "Completed" -percentComplete 100
 
     Write-host "============================================================================================================="
     Write-host "               You can find summary of file that has been deleted in DeletedFilesLog.txt"
@@ -154,21 +168,25 @@ function CleanUpManual()
 function CleanUpAuto()
 {
     param($ListOfDuplicatesGroups)
+    $GroupCounter=0
     foreach($nextDuplicateGroup in $ListOfDuplicatesGroups)
     {
+        
         $firstFile=$nextDuplicateGroup.ListOfFiles[0]
         $RestOfFiles=$nextDuplicateGroup.ListOfFiles | select -Skip 1
 
-        $FirstLine="This has ben kept {0,-20} {1} {2}" -f $firstFile.Name,$($nextDuplicateGroup.hashOfFiles[0].Substring(0,20)+"..."), $firstFile.DirectoryName 
+        $FirstLine="This has been kept {0,-20} {1} {2}" -f $firstFile.Name,$($nextDuplicateGroup.hashOfFiles[0].Substring(0,20)+"..."), $firstFile.DirectoryName 
         Write-host $FirstLine -ForegroundColor Cyan
 
         foreach($nextFileToDelete in $RestOfFiles)
         {
-            "This has ben deleted {0,-20} {1} {2}" -f $nextFileToDelete.Name,$($nextDuplicateGroup.hashOfFiles[0].Substring(0,20)+"..."), $nextFileToDelete.DirectoryName | Tee-Object -Append DeletedFilesLog.txt
+            "This has been deleted {0,-20} {1} {2}" -f $nextFileToDelete.Name,$($nextDuplicateGroup.hashOfFiles[0].Substring(0,20)+"..."), $nextFileToDelete.DirectoryName | Tee-Object -Append DeletedFilesLog.txt
             $nextFileToDelete | Remove-Item
         }
-        
+        Write-Progress -Id 3 -Activity "Duplication groups been progressed" -status "Group completed $GroupCounter" -percentComplete ($GroupCounter / $ListOfDuplicatesGroups.Count*100)
+        $GroupCounter++
     }
+    Write-Progress -Id 2 -Activity "Duplication groups been progressed" -status "Completed" -percentComplete 100
 
     Write-host "============================================================================================================="
     Write-host "               You can find summary of file that has been deleted in DeletedFilesLog.txt"
@@ -237,9 +255,10 @@ function CleanUpDefaultDir()
     $ReadOnlyDirectoryList | Format-Table
 
 
-
+    $GroupCounter=0
     foreach($nextDuplicateGroup in $ListOfDuplicatesGroups)
     {
+        
         $protectedFileList=@()
         $FilesToDelete=@()
         foreach($nextFile in $nextDuplicateGroup.ListOfFiles) 
@@ -267,12 +286,12 @@ function CleanUpDefaultDir()
         {
             foreach($nextFileToProtect in $protectedFileList)
             {
-                $FirstLine="This has ben kept {0,-20} {1} {2}" -f $nextFileToProtect.Name,$($nextDuplicateGroup.hashOfFiles[0].Substring(0,20)+"..."), $nextFileToProtect.DirectoryName 
+                $FirstLine="This has been kept {0,-20} {1} {2}" -f $nextFileToProtect.Name,$($nextDuplicateGroup.hashOfFiles[0].Substring(0,20)+"..."), $nextFileToProtect.DirectoryName 
                 Write-host $FirstLine -ForegroundColor Cyan
             }
             foreach($nextFileToDelete in $FilesToDelete)
             {
-                "This has ben deleted {0,-20} {1} {2}" -f $nextFileToDelete.Name,$($nextDuplicateGroup.hashOfFiles[0].Substring(0,20)+"..."), $nextFileToDelete.DirectoryName | Tee-Object -Append DeletedFilesLog.txt
+                "This has been deleted {0,-20} {1} {2}" -f $nextFileToDelete.Name,$($nextDuplicateGroup.hashOfFiles[0].Substring(0,20)+"..."), $nextFileToDelete.DirectoryName | Tee-Object -Append DeletedFilesLog.txt
                 $nextFileToDelete | Remove-Item
             }
         }
@@ -284,16 +303,19 @@ function CleanUpDefaultDir()
             $firstFile=$nextDuplicateGroup.ListOfFiles[0]
             $RestOfFiles=$nextDuplicateGroup.ListOfFiles | select -Skip 1
             
-            $FirstLine="This has ben kept {0,-20} {1} {2}" -f $firstFile.Name,$($nextDuplicateGroup.hashOfFiles[0].Substring(0,20)+"..."), $firstFile.DirectoryName 
+            $FirstLine="This has been kept {0,-20} {1} {2}" -f $firstFile.Name,$($nextDuplicateGroup.hashOfFiles[0].Substring(0,20)+"..."), $firstFile.DirectoryName 
             Write-host $FirstLine -ForegroundColor Cyan
             
             foreach($nextFileToDelete in $RestOfFiles)
             {
-                "This has ben deleted {0,-20} {1} {2}" -f $nextFileToDelete.Name,$($nextDuplicateGroup.hashOfFiles[0].Substring(0,20)+"..."), $nextFileToDelete.DirectoryName | Tee-Object -Append DeletedFilesLog.txt
+                "This has been deleted {0,-20} {1} {2}" -f $nextFileToDelete.Name,$($nextDuplicateGroup.hashOfFiles[0].Substring(0,20)+"..."), $nextFileToDelete.DirectoryName | Tee-Object -Append DeletedFilesLog.txt
                 $nextFileToDelete | Remove-Item
             }
         }
+        Write-Progress -Id 4 -Activity "Duplication groups been progressed" -status "Group completed $GroupCounter" -percentComplete ($GroupCounter / $ListOfDuplicatesGroups.Count*100)
+        $GroupCounter++
     }
+    Write-Progress -Id 2 -Activity "Duplication groups been progressed" -status "Completed" -percentComplete 100
 
     Write-host "============================================================================================================="
     Write-host "               You can find summary of file that has been deleted in DeletedFilesLog.txt"
@@ -301,16 +323,94 @@ function CleanUpDefaultDir()
     
 }
 
+function CleanUpMove()
+{
+    param($ListOfDuplicatesGroups)
+    
+    #get output folder from user and validate
+    $IsItCorrectPath=$false
+    do
+    {
+        $OutPutPath=Read-Host("Please define directory path where duplicated files can be moved")
+    
+        if($OutPutPath[$OutPutPath.Length-1] -ne "\")
+        {
+            $OutPutPath+="\"
+        }    
+        $CurrentFolder=(Get-Location).Path
+        $CurrentFolder+="\"
+        
+        #the output folder must be a different folder than source folder.
+        if($CurrentFolder -eq $OutPutPath)
+        {
+            write-host "Output folder must be different!"
+
+        }
+        else
+        {
+            $IsItCorrectPath=$true
+        }
+    }while(!$IsItCorrectPath)
+
+####
+    
+
+    #Proceed file moves group by group
+    $GroupCounter=0
+    foreach($nextDuplicateGroup in $ListOfDuplicatesGroups)
+    {
+        #Separate the group for first item and rest of the list
+        $firstFile=$nextDuplicateGroup.ListOfFiles[0]
+        $RestOfFiles=$nextDuplicateGroup.ListOfFiles | select -Skip 1
+
+
+        $FirstLine="This has been kept {0,-20} {1} {2}" -f $firstFile.Name,$($nextDuplicateGroup.hashOfFiles[0].Substring(0,20)+"..."), $firstFile.DirectoryName 
+        Write-host $FirstLine -ForegroundColor Cyan
+
+        #Move rest of the list
+        foreach($nextFileToDelete in $RestOfFiles)
+        {
+            "This has been moved {0,-20} {1} {2}" -f $nextFileToDelete.Name,$($nextDuplicateGroup.hashOfFiles[0].Substring(0,20)+"..."), $nextFileToDelete.DirectoryName | Tee-Object -Append MovedFilesLog.txt
+            
+            #Script will keep original folder structure on new location, so need to build up relative path based on 
+            #start location and current file location
+            $nextFilePath=$OutPutPath+$($nextFileToDelete.FullName.SubString($CurrentFolder.Length))
+            $NextFileDirectory=$nextFilePath.Substring(0,$nextFilePath.IndexOf($nextFilePath.Split("\")[$nextFilePath.Split("\").Length-1]))
+            
+            #Check if do directory exists and move
+            if (!(Test-Path -path $NextFileDirectory)) {$temp=New-Item $NextFileDirectory -Type Directory }
+            Move-Item $nextFileToDelete.fullname $nextFilePath
+
+            
+        }
+
+        Write-Progress -Id 5 -Activity "Duplication groups been progressed" -status "Group completed $GroupCounter" -percentComplete ($GroupCounter / $ListOfDuplicatesGroups.Count*100)
+        $GroupCounter++
+    }
+    Write-Progress -Id 2 -Activity "Duplication groups been progressed" -status "Completed" -percentComplete 100
+
+    Write-host "============================================================================================================="
+    Write-host "               You can find summary of file that has been moved in MovedFilesLog.txt"
+    Write-host "============================================================================================================="
+####
+
+    
+}
+
+
 
 function Find-FileDuplicates()
 {
 <#
    
 .DESCRIPTION
+   +---------------------------------------------------------------------------------------------------------------------+
+   |                Please make a backup before proceed or use DisplayOnly or ReturnObject features                      |
+   +---------------------------------------------------------------------------------------------------------------------+
    This function will scan all files in current folder and sub folders and build a list about duplication in default mode.
    You can use switches to choose one of the following options to manage files:
    
-   DisplayOnly /  Manual / Auto / DefendedDirectory / Save / ReturnObject
+   DisplayOnly /  Manual / Auto / DefendedDirectory / Save / ReturnObject / MoveDuplication
 
 .EXAMPLE
    Find-FileDuplicates -AfterBehaviour DisplayOnly
@@ -339,16 +439,45 @@ function Find-FileDuplicates()
    Find-FileDuplicates -AfterBehaviour ReturnObject
    After scan, script will return the Object list that can be used for further manipulation.
 
+.EXAMPLE
+   Find-FileDuplicates -AfterBehaviour MoveDuplication
+   After scan, script will clean up automiticlly and keep one instance of it. 
+   Rest of the duplications will be moved to the target folder with relative path.
+   Target folder will need to be provided on interactive way after script start.
 
 #>
     
     param(
-        [ValidateSet('DisplayOnly','Manual','Auto','DefendedDirectory', 'Save', 'ReturnObject')]
+        [ValidateSet('DisplayOnly','Manual','Auto','DefendedDirectory', 'Save', 'ReturnObject',"MoveDuplication")]
         [Parameter(Mandatory=$false, HelpMessage="Option to choose what script will do after file scan.")]
         [string]$AfterBehaviour="DisplayOnly")
-
+    
 
     $ListOfDuplicates=FindDuplicates
+
+    Write-Host "$(Get-Date -Format "dd.MM.yyyy-HH:mm:ss [3/3]>") Clean Up"
+    
+    if($AfterBehaviour -in "Manual", "Auto", "DefendedDirectory")
+    {
+        $completed=$false
+        do
+        {
+            Write-Host "=============================================================================================================" -ForegroundColor DarkYellow
+            Write-Host "  Backup before procceding is highly recommended, or if you are not sure try DisplayOnly or MoveDuplication " -ForegroundColor DarkYellow
+            Write-Host "=============================================================================================================" -ForegroundColor DarkYellow
+
+            $Confirmation=Read-Host("Do you want to continue?[y/n] ")
+            if($Confirmation.ToLower() -eq "y")
+            {
+                $completed=$true
+            }
+            elseif($Confirmation.ToLower() -eq "n")
+            {
+                
+                return
+            }
+        }while(!$completed)
+    }
 
 
     if($AfterBehaviour -eq "DisplayOnly")
@@ -375,5 +504,9 @@ function Find-FileDuplicates()
     if($AfterBehaviour -eq "DefendedDirectory")
     {
         CleanUpDefaultDir $ListOfDuplicates 
+    }
+    if($AfterBehaviour -eq "MoveDuplication")
+    {
+        CleanUpMove $ListOfDuplicates 
     }
 }

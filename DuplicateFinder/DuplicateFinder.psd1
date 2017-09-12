@@ -2,8 +2,8 @@
 RootModule="DuplicateFinder.psm1"
 GUID="488127aa-8772-4319-9a62-31c726c09d1a"
 Author="Krisztian Buscsei"
-ModuleVersion="1.0"
-Description="This module give tools to find a clean file duplications"
+ModuleVersion="1.1"
+Description="This module give tools to find and clean file duplications"
 
 # Private data to pass to the module specified in RootModule/ModuleToProcess
 PrivateData = @{
