@@ -18,23 +18,27 @@ Install-Module DuplicateFinder
 
 ### Examples
  * DisplayOnly
+ 
 This is the default behaviour. Script will only scan and display result
 ```
 Find-FileDuplicates -AfterBehaviour DisplayOnly
 ```
  * Manual
+ 
 After scan, script will offer option to keep a selected file after every single duplication group.
 ```
    Find-FileDuplicates -AfterBehaviour Manual
 ```
 
  * Auto
+ 
 After scan, script will delete all duplication except first instance.
 ```
    Find-FileDuplicates -AfterBehaviour Auto
 ```
    
  * DefendedDirectory
+ 
    After scan, script will delete all duplication except copies that located in protected folder instance.
    In case of duplication where no instance found in protected folder, the first instance will be kept.
 
@@ -44,6 +48,7 @@ After scan, script will delete all duplication except first instance.
 ```
  
  * Save
+ 
    After scan, script will save result in an XML file.
 ```
    Find-FileDuplicates -AfterBehaviour Save
@@ -51,6 +56,7 @@ After scan, script will delete all duplication except first instance.
 
 
  * ReturnObject
+ 
    After scan, script will return the Object list that can be used for further manipulation.
 ```
    Find-FileDuplicates -AfterBehaviour ReturnObject
